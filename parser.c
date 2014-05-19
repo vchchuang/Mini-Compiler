@@ -6,7 +6,13 @@
 char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
 char chstr[chstr_size] ,buf[buf_size];
 int fd1 ,fd2 ,fd3;
-
+struct RHS{
+   char element[20];
+};
+struct LHS{
+   char name[20];
+   struct RHS body[5];
+}NonT;
 void checkpoint(char* s){
    printf("lookahead is %s\n",s);
 }
@@ -23,13 +29,14 @@ void init(){
    while((fd2=read(fd1 ,chstr,chstr_size-1))>0){//fd2 bytes
       chstr[1]='\0';
       checkpoint(chstr);
-      }
-} 
+/*      if(chstr!=" "){
+
+      }*/
+   }
+}
 int main(){
    init();
    
-
-
    close(fd1);
    close(fd3);
 }
