@@ -14,7 +14,7 @@ struct LHS{
    char name[20];
    struct RHS body[15];
    int p_max;
-}NonT[20];
+}NonT[28];
 void checkpoint(int a ,char* s){
    printf("lookahead is %s in state %d \n",s,a);
 }
@@ -124,7 +124,7 @@ void init(){
    }
   //check data structure
    int loop_count = 0;
-   for(;loop_count<=18;loop_count++){
+   for(;loop_count<=26;loop_count++){
       printf("%s\n",NonT[loop_count].name);
       for(int p=0;p<=NonT[loop_count].p_max;p++){
          printf("\t");
