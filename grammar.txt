@@ -55,13 +55,13 @@ E
     = Expr
     [ Expr ] = Expr
 Primary
-    id
     num
     ( Expr )
     id P
 P
     ( ExprList )
     [ Expr ]
+    epsilon
 ExprList
     ExprListTail
     epsilon
