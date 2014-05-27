@@ -3,9 +3,11 @@
 #include <fcntl.h>
 #define chstr_size 2
 #define buf_size 512
+char inputfile_1[20]="main.c" ,outputfile_1[20]="token.txt";
 char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
 char chstr[chstr_size] ,buf[buf_size];
-int fd1 ,fd2 ,fd3;
+int fd1 ,fd2 ,fd3;//IO grammar information
+int fd4 ,fd5 ,fd6;//IO source code
 struct RHS{
    char element[10][20];
    int e_max;
@@ -137,8 +139,29 @@ void init(){
    }
 }
 int main(){
+   //build parsing table
    init();
+   //open inputfile
+   if((fd4=open(inputfile_1,O_RDONLY))==-1){
+      printf("cannot open file.");
+      exit(1);
+   }
+   //open outputfile
+   fd6=open(outputfile_1,O_CREAT|O_WRONLY,0644);
    
+   //parsing
+   while((fd5=read(fd4 ,chstr,chstr_size-1))>0){//fd6 bytes
+      //check lexem and build token list ,symbol table
+      
+      //LL(1) parser
+      
+      
+      
+      //write(fd6,chstr,chstr_size-1);
+   }
+
    close(fd1);
    close(fd3);
+   close(fd4);
+   close(fd6);
 }
