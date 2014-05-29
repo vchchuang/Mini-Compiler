@@ -9,7 +9,7 @@ char chstr[chstr_size] ,buf[buf_size];
 int fd1 ,fd2 ,fd3;//IO grammar information
 int fd4 ,fd5 ,fd6;//IO source code
 struct set{
-   char element[10][20];
+   char* element[10];
    int set_max;
 };
 struct RHS{
@@ -27,10 +27,12 @@ struct LHS{
    struct set First;
    struct set Follow;
 }NonT[28];
+
 void checkpoint(int a ,char* s){
    printf("lookahead is %s in state %d \n",s,a);
 }
-
+void Nullable(){
+}
 void init(){
    //open inputfile
    if((fd1=open(inputfile_2,O_RDONLY))==-1){
@@ -48,8 +50,14 @@ void init(){
    for(int i=0;i<20;i++){
       NonT[i].body[p_count].e_max = 0;
       NonT[i].p_max = 0;
-      NonT[i].
    }
+   for(int i=0;i<28;i++){
+      for(int j=0;j<10;j++){
+         NonT[i].First.element[j]="non";
+         NonT[i].Follow.element[j]="non";
+      }
+   }
+
    while((fd2=read(fd1 ,chstr,chstr_size-1))>0){//fd2 bytes
       chstr[1]='\0';
       switch(state){
@@ -142,7 +150,18 @@ void init(){
   //check data structure
    int loop_count = 0;
    for(;loop_count<=26;loop_count++){
-      printf("%s\n",NonT[loop_count].name);
+      printf("%s",NonT[loop_count].name);
+
+      printf("\n    FIRST : ");
+      for(int f=0;f<10;f++){
+         printf("%s ",NonT[loop_count].First.element[f]);
+      }
+      printf("\n    FOLLOW : ");
+      for(int f=0;f<10;f++){
+         printf("%s ",NonT[loop_count].Follow.element[f]);
+      }
+      printf("\n");
+
       for(int p=0;p<=NonT[loop_count].p_max;p++){
          printf("\t");
          for(int e=0;e<=NonT[loop_count].body[p].e_max;e++){
