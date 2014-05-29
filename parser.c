@@ -8,16 +8,24 @@ char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
 char chstr[chstr_size] ,buf[buf_size];
 int fd1 ,fd2 ,fd3;//IO grammar information
 int fd4 ,fd5 ,fd6;//IO source code
+struct set{
+   char element[10][20];
+   int set_max;
+};
 struct RHS{
    char element[10][20];
    int e_max;
    int isNull;
+   struct set First;
+   struct set Follow;
 };
 struct LHS{
    char name[20];
    struct RHS body[15];
    int p_max;
    int isNull;
+   struct set First;
+   struct set Follow;
 }NonT[28];
 void checkpoint(int a ,char* s){
    printf("lookahead is %s in state %d \n",s,a);
@@ -40,6 +48,7 @@ void init(){
    for(int i=0;i<20;i++){
       NonT[i].body[p_count].e_max = 0;
       NonT[i].p_max = 0;
+      NonT[i].
    }
    while((fd2=read(fd1 ,chstr,chstr_size-1))>0){//fd2 bytes
       chstr[1]='\0';
