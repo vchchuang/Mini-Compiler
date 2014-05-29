@@ -11,11 +11,13 @@ int fd4 ,fd5 ,fd6;//IO source code
 struct RHS{
    char element[10][20];
    int e_max;
+   int isNull;
 };
 struct LHS{
    char name[20];
    struct RHS body[15];
    int p_max;
+   int isNull;
 }NonT[28];
 void checkpoint(int a ,char* s){
    printf("lookahead is %s in state %d \n",s,a);
@@ -50,7 +52,9 @@ void init(){
                ch_count = ch_count + 1;
             }else if(strcmp(chstr,"\n")==0){
                NonT[nont_count].name[ch_count]='\0';
-              printf("%s\n\t",NonT[nont_count].name); //printf LHS
+               printf("%s\n\t",NonT[nont_count].name); //printf LHS
+               //init isNull of LHS
+               NonT[nont_count].isNull = 0;
                ch_count = 0;
                state = 1;
             }
@@ -88,6 +92,8 @@ void init(){
             }else if(strcmp(chstr,"\n")==0){//one body finished
                 NonT[nont_count].body[p_count].element[elem_count][ch_count]
                 ='\0';
+                //init isNull of RHS
+               NonT[nont_count].body[p_count].isNull = 0;
                 //memo counting data
                 NonT[nont_count].p_max 
                   = p_count + 1;
@@ -151,8 +157,8 @@ int main(){
    
    //parsing
    while((fd5=read(fd4 ,chstr,chstr_size-1))>0){//fd6 bytes
-      //check lexem and build token list ,symbol table
-      
+      //check lexem and build token list ,symbol table 
+      //and return lexem for parser
       //LL(1) parser
       
       
