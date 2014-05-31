@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #define chstr_size 2
 #define buf_size 512
+#define g_size 27
 char inputfile_1[20]="main.c" ,outputfile_1[20]="token.txt";
 char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
 char chstr[chstr_size] ,buf[buf_size];
@@ -26,7 +27,7 @@ struct LHS{
    int isNull;
    struct set First;
    struct set Follow;
-}NonT[27];
+}NonT[g_size];
 void checkpoint(int a ,char* s){
    printf("lookahead is %s in state %d \n",s,a);
 }
@@ -63,6 +64,23 @@ int Nullable(char* str){
    }
    return 0;
 }
+struct set First(char* str){
+   int index = 0;
+   struct set SET;
+   index = isT(str);
+   if(index==30){
+      SET.element[0]=str;
+      SET.set_max = 1;
+      return SET;
+   }
+/*
+   for(int u=0;u<NonT[index].p_max;u++){
+      for(int e=0;e<NonT[index].body[u].e_max;e++){
+         if(Nullable(NonT[index].body[u].element[e])==0){
+            First(NonT[index].body[u].element[e]);
+*/
+}
+
 void init(){
    //open inputfile
    if((fd1=open(inputfile_2,O_RDONLY))==-1){
@@ -77,11 +95,12 @@ void init(){
    int pass_b = 1;//pass_b is the position of the blank
    int state = 0 ,s_count = 0;
    //init info
-   for(int i=0;i<27;i++){
+   for(int i=0;i<g_size;i++){
       NonT[i].body[p_count].e_max = 0;
       NonT[i].p_max = 0;
    }
-   for(int i=0;i<27;i++){
+
+   for(int i=0;i<g_size;i++){
       for(int j=0;j<10;j++){
          NonT[i].First.element[j]="non";
          NonT[i].Follow.element[j]="non";
@@ -180,12 +199,12 @@ void init(){
    /////////////////
    //  Nullable
    //////////////
-   for(int n=0;n<26;n++){
+   for(int n=0;n<g_size;n++){
       NonT[n].isNull = Nullable(NonT[n].name);
    }
   //check data structure
    int loop_count = 0;
-   for(;loop_count<26;loop_count++){
+   for(;loop_count<g_size;loop_count++){
       printf("%s",NonT[loop_count].name);
 
       printf("\n    NULLABLE : ");
