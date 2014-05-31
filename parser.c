@@ -26,12 +26,42 @@ struct LHS{
    int isNull;
    struct set First;
    struct set Follow;
-}NonT[28];
-
+}NonT[27];
 void checkpoint(int a ,char* s){
    printf("lookahead is %s in state %d \n",s,a);
 }
-void Nullable(){
+int isT(char* str){
+   for(int i=0;i<27;i++){
+      if(strcmp(NonT[i].name,str)==0){
+         return i;
+      }
+   }
+   return 30;
+}
+
+int Nullable(char* str){ 
+   int index=0 ,nr=0;
+   index = isT(str);
+   if(strcmp(str,"epsilon")==0){
+      return 1;//true
+   }
+   if(index==30){
+      return 0;//false
+   }
+//    printf("%d %s -",index,str);
+   //NonTer
+   for(int or=0;or<NonT[index].p_max;or++){//for body1 | body2 | ... | bodyn
+      for(int and=0;and<=NonT[index].body[or].e_max;and++){//for e1 ^ e2 ^ ... ^en
+         if((nr=Nullable(NonT[index].body[or].element[and]))==0){
+     //       printf("%s ",NonT[index].body[or].element[and]);
+            NonT[index].body[or].isNull=0;
+            break;//check next body
+         }else if(and==NonT[index].body[or].e_max){
+            return 1;//check finished
+         }
+      }
+   }
+   return 0;
 }
 void init(){
    //open inputfile
@@ -47,11 +77,11 @@ void init(){
    int pass_b = 1;//pass_b is the position of the blank
    int state = 0 ,s_count = 0;
    //init info
-   for(int i=0;i<20;i++){
+   for(int i=0;i<27;i++){
       NonT[i].body[p_count].e_max = 0;
       NonT[i].p_max = 0;
    }
-   for(int i=0;i<28;i++){
+   for(int i=0;i<27;i++){
       for(int j=0;j<10;j++){
          NonT[i].First.element[j]="non";
          NonT[i].Follow.element[j]="non";
@@ -71,7 +101,7 @@ void init(){
                NonT[nont_count].name[ch_count]='\0';
                printf("%s\n\t",NonT[nont_count].name); //printf LHS
                //init isNull of LHS
-               NonT[nont_count].isNull = 0;
+               NonT[nont_count].isNull = 5;
                ch_count = 0;
                state = 1;
             }
@@ -147,10 +177,19 @@ void init(){
              break;
       }
    }
+   /////////////////
+   //  Nullable
+   //////////////
+   for(int n=0;n<26;n++){
+      NonT[n].isNull = Nullable(NonT[n].name);
+   }
   //check data structure
    int loop_count = 0;
-   for(;loop_count<=26;loop_count++){
+   for(;loop_count<26;loop_count++){
       printf("%s",NonT[loop_count].name);
+
+      printf("\n    NULLABLE : ");
+      printf("%d",NonT[loop_count].isNull);
 
       printf("\n    FIRST : ");
       for(int f=0;f<10;f++){
