@@ -10,6 +10,25 @@ char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
 char chstr[chstr_size] ,buf[buf_size];
 int fd1 ,fd2 ,fd3;//IO grammar information
 int fd4 ,fd5 ,fd6;//IO source code
+char *tok_dict[]={
+   "int","char","return","if","else","while","break"//Keyword
+   ,"=","!","+","-","*","/","==","!=","<",">","<=",">=","&&","||"//Operator
+     ,"[","]","(",")","{","}",";"//Special Symbol
+     ,"id"//Identifier
+     ,"num"//Number
+     ,"CHAR"//Char
+     ,"//"};//Comment
+struct symbol_table{
+   char* symbol;
+   int token;
+   int init;//init value?
+   char str[10];
+   int value;
+}st[5];
+struct lex_data{//for lexer
+   int token;
+   char* symbol[200];
+}input;
 struct set{
    char* element[set_size];
    int set_max;
