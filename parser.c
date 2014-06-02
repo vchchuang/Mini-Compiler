@@ -68,17 +68,16 @@ struct set First(char* str){
    int index = 0;
    struct set SET;
    index = isT(str);
+   SET.set_max = 0;
    if(index==30){
       SET.element[0]=str;
       SET.set_max = 1;
       return SET;
+   }else if(!NonT[index].isNull){
+      return NonT[index].First;
    }
-/*
-   for(int u=0;u<NonT[index].p_max;u++){
-      for(int e=0;e<NonT[index].body[u].e_max;e++){
-         if(Nullable(NonT[index].body[u].element[e])==0){
-            First(NonT[index].body[u].element[e]);
-*/
+
+   return SET;
 }
 
 void init(){
@@ -106,6 +105,16 @@ void init(){
          NonT[i].Follow.element[j]="non";
       }
    }
+   for(int i=0;i<g_size;i++){
+      NonT[i].First.set_max=0;
+      NonT[i].Follow.set_max=0;
+      for(int j=0;j<NonT[i].p_max;j++){
+         NonT[i].body[j].First.set_max=0;
+         NonT[i].body[j].Follow.set_max=0;
+      }
+   }
+      
+      
 
    while((fd2=read(fd1 ,chstr,chstr_size-1))>0){//fd2 bytes
       chstr[1]='\0';
