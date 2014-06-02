@@ -4,13 +4,14 @@
 #define chstr_size 2
 #define buf_size 512
 #define g_size 27
+#define set_size 20
 char inputfile_1[20]="main.c" ,outputfile_1[20]="token.txt";
 char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
 char chstr[chstr_size] ,buf[buf_size];
 int fd1 ,fd2 ,fd3;//IO grammar information
 int fd4 ,fd5 ,fd6;//IO source code
 struct set{
-   char* element[10];
+   char* element[set_size];
    int set_max;
 };
 struct RHS{
@@ -67,6 +68,7 @@ int Nullable(char* str){
 struct set First(char* str){
    int index = 0;
    struct set SET;
+   printf("%d",index);
    index = isT(str);
    SET.set_max = 0;
    if(index==30){
@@ -75,11 +77,37 @@ struct set First(char* str){
       return SET;
    }else if(!NonT[index].isNull){
       return NonT[index].First;
+   }else{
+      SET.element[0]="epsilon";
+      SET.set_max = 1;
+      return SET;
    }
-
    return SET;
 }
+void addSet(struct set* SET1,struct set SET2){
+   int check=0;
+   if(SET2.set_max==0){
+      return 0;
+   }else{
 
+      for(int i=0;i<SET2.set_max;i++){
+         //check
+         check=0;
+         for(int j=0;j<SET1->set_max;j++){
+            if(strcmp(SET1->element[j],SET2.element[i])==0){
+               check=1;
+               break;
+            }
+         }
+         //put into the set1
+         if(check==0){
+            SET1->element[SET1->set_max]=SET2.element[i];
+            SET1->set_max = SET1->set_max + 1;
+         }
+         //check next
+      }
+   }
+}
 void init(){
    //open inputfile
    if((fd1=open(inputfile_2,O_RDONLY))==-1){
@@ -98,13 +126,14 @@ void init(){
       NonT[i].body[p_count].e_max = 0;
       NonT[i].p_max = 0;
    }
-
+/*
    for(int i=0;i<g_size;i++){
       for(int j=0;j<10;j++){
          NonT[i].First.element[j]="non";
          NonT[i].Follow.element[j]="non";
       }
    }
+   */
    for(int i=0;i<g_size;i++){
       NonT[i].First.set_max=0;
       NonT[i].Follow.set_max=0;
@@ -211,6 +240,36 @@ void init(){
    for(int n=0;n<g_size;n++){
       NonT[n].isNull = Nullable(NonT[n].name);
    }
+   ////////////////
+   // First
+   /////////////
+   for(int c=0;c<20;c++){
+      //RHS
+    for(int n=0;n<g_size;n++){
+         for(int b=0;b<NonT[n].p_max;b++){
+            //     e1 U e2 if Nullable(e1) 
+            //else e1
+            for(int e=0;e<=NonT[n].body[b].e_max;e++){
+              struct set SET=First(NonT[n].body[b].element[e]);
+         
+               if(SET.set_max==1&&strcmp(SET.element[0],"epsilon")==0){
+                  //the first of body will be in the next element
+               }
+               else{
+                  addSet(&NonT[n].body[b].First,SET);
+                  printf("%d ",n);
+                  break;
+               }
+            }  
+         }
+    }
+      //LHS
+    for(int n=0;n<g_size;n++){
+       for(int b=0;b<NonT[n].p_max;b++){
+          addSet(&NonT[n].First ,NonT[n].body[b].First);
+       }
+    }
+   }
   //check data structure
    int loop_count = 0;
    for(;loop_count<g_size;loop_count++){
@@ -220,11 +279,11 @@ void init(){
       printf("%d",NonT[loop_count].isNull);
 
       printf("\n    FIRST : ");
-      for(int f=0;f<10;f++){
+      for(int f=0;f<NonT[loop_count].First.set_max;f++){
          printf("%s ",NonT[loop_count].First.element[f]);
       }
       printf("\n    FOLLOW : ");
-      for(int f=0;f<10;f++){
+      for(int f=0;f<NonT[loop_count].Follow.set_max;f++){
          printf("%s ",NonT[loop_count].Follow.element[f]);
       }
       printf("\n");
