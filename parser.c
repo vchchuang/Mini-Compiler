@@ -1,10 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <ctype.h>
 #define chstr_size 2
-#define buf_size 512
+#define buf_size 10
 #define g_size 27
 #define set_size 20
+#define loc_size 20
+#define nol 50
+#define st_size 50
 char inputfile_1[20]="main.c" ,outputfile_1[20]="token.txt";
 char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
 char chstr[chstr_size] ,buf[buf_size];
@@ -13,22 +17,36 @@ int fd4 ,fd5 ,fd6;//IO source code
 char *tok_dict[]={
    "int","char","return","if","else","while","break"//Keyword
    ,"=","!","+","-","*","/","==","!=","<",">","<=",">=","&&","||"//Operator
-     ,"[","]","(",")","{","}",";"//Special Symbol
+     ,"[","]","(",")","{","}",",",";"//Special Symbol
      ,"id"//Identifier
      ,"num"//Number
      ,"CHAR"//Char
-     ,"//"};//Comment
+     ,"//"//Comment
+     ,"epsilon"//empty string
+     ,"$"
+};
+char* tok_sym[9]={"Keyword","Operator","SpecialSymbol","Identifier","Num","Char","Comment","Epsilon","$"};
+
+int state=0 ,lookahead=-1;
+int line=0 ,it=0 ,sc=0 ,scope=0;
 struct symbol_table{
-   char* symbol;
+   char symbol[10];
    int token;
    int init;//init value?
    char str[10];
-   int value;
-}st[5];
+   //int value;
+}st[5][20];
 struct lex_data{//for lexer
    int token;
-   char* symbol[200];
-}input;
+   int scope;
+   char name[buf_size];
+};
+struct line_lex{
+   struct lex_data item[loc_size];
+   int e_count;
+   int line;
+}tok_list[nol];
+
 struct set{
    char* element[set_size];
    int set_max;
@@ -48,6 +66,54 @@ struct LHS{
    struct set First;
    struct set Follow;
 }NonT[g_size];
+
+//STACK
+int stack[st_size];//if stack[stp-1] is '$' => parsing finished!
+int stp=0;
+//STACK OP
+void push(int i){
+   if(stp>=st_size){
+      printf("stack overflow!! current is %d\n",i);
+   }else{
+      stack[stp++]=i;
+   }
+}
+void rm(int hm){
+   if(stp<=(st_size-st_size)){
+      printf("stack is empty!! \n");
+   }else{
+      stp = stp-hm;
+   }
+}
+
+//search value
+int FindTokV(char* str){
+   int tokv=0 ,c=0;
+   while(strcmp(str,tok_dict[c])!=0&&strcmp(tok_dict[c],"$")!=0){
+      c = c+1;
+   }
+   if(c>50){
+      return -1;
+   }else{
+      tokv = c+40;
+      return tokv;//tokv-40+1 => serial num of terminal
+   }
+}
+
+int FindNonTV(char* str){
+   int nontv=0 ,c=0;
+   while(strcmp(str,NonT[c].name)!=0&&c<g_size){
+      c = c+1;
+   }
+   if(c>=g_size){
+      return -1;
+   }else{
+      nontv = c;
+      return nontv;
+   }
+}
+
+//for input
 void checkpoint(int a ,char* s){
    printf("lookahead is %s in state %d \n",s,a);
 }
@@ -127,6 +193,135 @@ void addSet(struct set* SET1,struct set SET2){
       }
    }
 }
+void lexer(char* ch,int c){
+   
+   //printf("%s",buf);
+  // printf("%d",ch);
+   switch(state){
+     case 0:
+         if(strcmp(ch,"+")==0||strcmp(ch,"-")==0||strcmp(ch,"*")==0||strcmp(ch,"/")==0||strcmp(ch,"=")==0||strcmp(ch,";")==0||strcmp(ch,",")==0||strcmp(ch,"(")==0||strcmp(ch,")")==0||strcmp(ch,"{")==0||strcmp(ch,"}")==0){
+            buf[c]=ch[0];
+            buf[c+1]='\0';
+//           printf("%s",buf);
+            state = 1;// operator and special symbol
+         }else if(isalpha(ch[0])){
+            buf[c]=ch[0];
+            buf[c+1]='\0';
+            state = 2;//alpha string
+         }else if(isdigit(ch[0])){
+            buf[c]=ch[0];
+            buf[c+1]='\0';
+            state = 3;//digit
+          }else if(strcmp(ch," ")==0){
+             state=-1;
+          }else if(strcmp(ch,"\n")==0){
+            state=-1;
+            //line = line+1;
+            it = 0;
+          }
+         break;
+      case 1:// + - * / = // == , ; ( ) { }
+          if(strcmp(ch," ")==0){
+             state=0;
+
+             if(strcmp(buf,"{")==0){
+                sc = sc+1;
+                scope = sc;
+             }else if(strcmp(buf,"}")==0){
+                scope = scope-1;
+             }
+             tok_list[line].item[it].token=lookahead=FindTokV(buf);
+             strcpy(tok_list[line].item[it].name ,buf);
+             printf("This is state %d :%s\n",state,buf);
+             tok_list[line].item[it].scope=scope;
+             tok_list[line].line=line;
+             tok_list[line].e_count=it;
+             it = it+1;
+          }else if(strcmp(ch,"\n")){
+             state=0;
+            
+             if(strcmp(buf,"{")==0){
+                sc = sc+1;
+                scope = sc;
+             }else if(strcmp(buf,"}")==0){
+                scope = scope-1;
+             }
+             tok_list[line].item[it].token=lookahead=FindTokV(buf);
+             strcpy(tok_list[line].item[it].name ,buf);
+             tok_list[line].item[it].scope=scope;
+             tok_list[line].line=line;
+             tok_list[line].e_count=it;
+             line = line+1;
+             it = 0;
+          }else if(strcmp(buf[c-1],"/")==0&&strcmp(ch,"/")==0){
+           buf[c]=ch[0];
+           buf[c+1]='\0';
+           state = 1;
+         }else if(strcmp(buf[c-1],"=")&&strcmp(ch,"=")==0){
+           buf[c]=ch[0];
+           buf[c+1]='\0';
+           state = 1;
+         }else state=100;//error
+      break;
+      case 2:// alpha string
+         if(strcmp(ch," ")==0){
+            state=0;
+ //           printf("%s",buf);
+            lookahead=FindTokV(buf);
+            if(lookahead>=46||lookahead<40){
+               tok_list[line].item[it].token
+                 =lookahead=FindTokV("id"); //identifier
+               strcpy(tok_list[line].item[it].name ,buf);
+               tok_list[line].item[it].scope=scope;
+               tok_list[line].line=line;
+               tok_list[line].e_count=it;
+               it = it+1;
+
+            }else{
+            
+               tok_list[line].item[it].token=lookahead; //Keyword
+               strcpy(tok_list[line].item[it].name ,buf);
+               tok_list[line].item[it].scope=scope;
+               tok_list[line].line=line;
+               tok_list[line].e_count=it;
+               it = it+1;
+            }
+         }else if(isalpha(ch[0])||isdigit(ch[0])){
+            buf[c]=ch[0];
+            buf[c+1]='\0';
+            state = 2;
+         }
+         break;
+      case 3:
+         if(strcmp(ch," ")==0){
+            state=0;
+            lookahead=FindTokV("num");
+            
+            tok_list[line].item[it].token = lookahead;
+            strcpy(tok_list[line].item[it].name ,buf);
+            tok_list[line].item[it].scope=scope;
+            tok_list[line].line=line;
+            tok_list[line].e_count=it;
+            it = it+1;
+
+         }else if(isdigit(ch[0])){
+            buf[c]=ch[0];
+            buf[c+1]='\0';
+            state = 3;
+         }
+         break;
+      case 99:
+      //produce a lexeme
+         
+         break;
+      case 100:
+         //error
+         break;
+      default :
+       break;
+   }
+}
+      
 void init(){
    //open inputfile
    if((fd1=open(inputfile_2,O_RDONLY))==-1){
@@ -316,31 +511,101 @@ void init(){
       }
       printf("\n");
    }
+
+close(fd1);
+close(fd3);
 }
 int main(){
+
+   FILE* out;
    //build parsing table
    init();
+   //init stack
+   push(FindTokV("$"));
+   push(0);//the value of start Symbol
+
+
    //open inputfile
    if((fd4=open(inputfile_1,O_RDONLY))==-1){
       printf("cannot open file.");
       exit(1);
    }
-   //open outputfile
-   fd6=open(outputfile_1,O_CREAT|O_WRONLY,0644);
+   //open outputfil
+   //fd6=open(outputfile_1,O_CREAT|O_WRONLY,0644);
+   out=fopen(outputfile_1,"w");
    
+
    //parsing
+   int finish=0;
+   int e_count=0;
+   buf[0]='\0';
+   while(!finish){
+      state=-1;
+    //  printf("lookahead is ");
+      //buf[1]='\0';
+      //give a token if success 
    while((fd5=read(fd4 ,chstr,chstr_size-1))>0){//fd6 bytes
       //check lexem and build token list ,symbol table 
       //and return lexem for parser
       //LL(1) parser
+      chstr[1]='\0';
+    //   printf("%s",chstr);
+      if(state==-1)state=0;
+   //lexer
+      lexer(chstr,e_count);
       
-      
-      
-      //write(fd6,chstr,chstr_size-1);
-   }
+      if(state==-1){
+         e_count=0;
+         buf[0]='\0';
+      }else e_count = e_count+1;
 
-   close(fd1);
-   close(fd3);
+      //write(fd6,chstr,chstr_size-1);
+      if(state==100){
+          printf("lexer analysis error!!");
+          break;
+       }else if(state==0){
+          e_count=0;
+          printf("%s",buf);
+          lookahead=FindTokV(buf);
+          printf("\ntoken is %d\n\n",lookahead);
+          buf[0]='\0';
+          break;
+       }
+
+   }
+   e_count = 0;
+
+      if(stp==0&&strcmp(stack[stp],"$")==0){
+         finish=1; 
+      }
+
+      if(fd5<=0)finish=1;//for testing lexer
+   }
+    
+//token_list output
+   int opt=0,tk=0;
+   for(int l=0;l<line;l++){
+      fprintf(out,"line %d:\n",l+1);
+      printf("line %d:\n",l+1);
+      for(int e=0;e<=tok_list[l].e_count;e++){
+         tk=tok_list[l].item[e].token;
+         if(tk<=46&&tk>=40)opt=0;
+         else if(tk>=47&&tk<=60)opt=1;
+         else if(tk>=61&&tk<=68)opt=2;
+         else if(tk==69)opt=3;
+         else if(tk==70)opt=4;
+         else if(tk==71)opt=5;
+         else if(tk==72)opt=6;
+         else if(tk==73)opt=7;
+         else if(tk==74)opt=8;
+    //     printf("tk %d opt %d",tk,opt);
+         fprintf(out,"    <%s>: %s\n",tok_sym[opt],tok_list[l].item[e].name);
+         printf("    <%s>: %s\n",tok_sym[opt],tok_list[l].item[e].name);
+
+      }
+   }
+   
    close(fd4);
    close(fd6);
+   fclose(out);
 }
