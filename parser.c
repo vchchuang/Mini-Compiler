@@ -4,7 +4,7 @@
 #include <ctype.h>
 #define chstr_size 2
 #define buf_size 10
-#define g_size 27
+#define g_size 28
 #define set_size 20
 #define loc_size 20
 #define nol 50
