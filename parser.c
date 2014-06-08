@@ -125,7 +125,31 @@ int isT(char* str){
    }
    return 30;
 }
+void addSet(struct set* SET1,struct set SET2){
+   int check=0;
+   if(SET2.set_max==0){
+      return 0;
+   }else{
 
+      for(int i=0;i<SET2.set_max;i++){
+         //check
+         check=0;
+         for(int j=0;j<SET1->set_max;j++){
+            if(strcmp(SET1->element[j],SET2.element[i])==0){
+               check=1;
+               break;
+            }
+         }
+         //put into the set1
+         if(check==0){
+            SET1->element[SET1->set_max]=SET2.element[i];
+            SET1->set_max = SET1->set_max + 1;
+         }
+         //check next
+      }
+   }
+}
+v
 int Nullable(char* str){ 
    int index=0 ,nr=0;
    index = isT(str);
@@ -169,30 +193,30 @@ struct set First(char* str){
    }
    return SET;
 }
-void addSet(struct set* SET1,struct set SET2){
-   int check=0;
-   if(SET2.set_max==0){
-      return 0;
-   }else{
-
-      for(int i=0;i<SET2.set_max;i++){
-         //check
-         check=0;
-         for(int j=0;j<SET1->set_max;j++){
-            if(strcmp(SET1->element[j],SET2.element[i])==0){
-               check=1;
-               break;
+struct set Follow(char* lhs){
+   int index=0 ,index2=0;
+   struct set SET;
+   index=isT(lhs);
+   for(int i=0;i<g_size;i++){
+      for(int p=0;p<NonT[i].p_count;p++){
+         for(int e=0;e<NonT[i].body[p].e_count;e++){
+            //S -> a T 
+            if(strcmp(NonT[index].name,NonT[i].body[p].element[e])==0
+              &&e==NonT[i].body[p].e_count-1){
+               addSet(NonT[index].Follow ,NonT[i].Follow);
+            }else if(strcmp(NonT[index].name,NonT[i].body[p].element[e])==0
+              &&(index2=isT(NonT[i].body[p].element[e+1]))==30){//S -> T b
+               strcpy(SET.element[0] ,NonT[i].body[p].element[e+1]);
+               SET.max = 1;
+               addSet(NonT[index].Follow ,SET);
+            }else if(strcmp(NonT[index].name,NonT[i].body[p].element[e])==0
+              &&(index2=isT(NonT[i].body[p].element[e+1]))!=30){//S -> T B
+               addSet(NonT[index].Follow ,NonT[index2].Follow);
             }
          }
-         //put into the set1
-         if(check==0){
-            SET1->element[SET1->set_max]=SET2.element[i];
-            SET1->set_max = SET1->set_max + 1;
-         }
-         //check next
       }
    }
-}
+
 void lexer(char* ch,int c){
    
    //printf("%s",buf);
