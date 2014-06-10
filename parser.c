@@ -5,7 +5,7 @@
 #define chstr_size 2
 #define buf_size 10
 #define g_size 28
-#define set_size 20
+#define set_size 40
 #define loc_size 20
 #define nol 50
 #define st_size 50
@@ -118,7 +118,7 @@ void checkpoint(int a ,char* s){
    printf("lookahead is %s in state %d \n",s,a);
 }
 int isT(char* str){
-   for(int i=0;i<27;i++){
+   for(int i=0;i<g_size;i++){
       if(strcmp(NonT[i].name,str)==0){
          return i;
       }
@@ -149,7 +149,7 @@ void addSet(struct set* SET1,struct set SET2){
       }
    }
 }
-v
+
 int Nullable(char* str){ 
    int index=0 ,nr=0;
    index = isT(str);
@@ -193,30 +193,41 @@ struct set First(char* str){
    }
    return SET;
 }
-struct set Follow(char* lhs){
+void Follow(char* lhs){
    int index=0 ,index2=0;
    struct set SET;
    index=isT(lhs);
    for(int i=0;i<g_size;i++){
-      for(int p=0;p<NonT[i].p_count;p++){
-         for(int e=0;e<NonT[i].body[p].e_count;e++){
+      for(int pd=0;pd<NonT[i].p_max;pd++){
+         for(int e=0;e<=NonT[i].body[pd].e_max;e++){
             //S -> a T 
-            if(strcmp(NonT[index].name,NonT[i].body[p].element[e])==0
-              &&e==NonT[i].body[p].e_count-1){
-               addSet(NonT[index].Follow ,NonT[i].Follow);
-            }else if(strcmp(NonT[index].name,NonT[i].body[p].element[e])==0
-              &&(index2=isT(NonT[i].body[p].element[e+1]))==30){//S -> T b
-               strcpy(SET.element[0] ,NonT[i].body[p].element[e+1]);
-               SET.max = 1;
-               addSet(NonT[index].Follow ,SET);
-            }else if(strcmp(NonT[index].name,NonT[i].body[p].element[e])==0
-              &&(index2=isT(NonT[i].body[p].element[e+1]))!=30){//S -> T B
-               addSet(NonT[index].Follow ,NonT[index2].Follow);
-            }
+            if(strcmp(NonT[index].name,NonT[i].body[pd].element[e])==0){
+               
+               if(e==NonT[i].body[pd].e_max){ 
+                 // printf("NonT is %s and  is in %s 's body-%d ,%dth position\n" ,NonT[index].name,NonT[i].name,pd,e);
+                  addSet(&NonT[index].Follow ,NonT[i].Follow);
+               }else if(e<NonT[i].body[pd].e_max){
+                  index2=isT(NonT[i].body[pd].element[e+1]);
+
+                  if(index2==30){//S -> T b
+                    printf("NonT is %s and  is in %s 's body-%d ,%dth position ,e+1 is %s\n" ,NonT[index].name,NonT[i].name,pd,e,NonT[i].body[pd].element[e+1]);
+                     SET.element[0]=NonT[i].body[pd].element[e+1];
+                     SET.set_max = 1;
+                     addSet(&NonT[index].Follow ,SET);
+                  }else { //S -> T B
+                  // printf("NonT is %s and  is in %s 's body-%d ,%dth position\n" ,NonT[index].name,NonT[i].name,pd,e); 
+                     if(!NonT[index2].isNull) addSet(&NonT[index].Follow ,NonT[index2].First);
+                     else if(e+1==NonT[i].body[pd].e_max){
+                        addSet(&NonT[index].Follow ,NonT[index2].First);
+                        addSet(&NonT[index].Follow ,NonT[i].Follow);
+                     }
+                  }
+               }
+            } 
          }
       }
    }
-
+}
 void lexer(char* ch,int c){
    
    //printf("%s",buf);
@@ -348,6 +359,7 @@ void lexer(char* ch,int c){
       
 void init(){
    //open inputfile
+
    if((fd1=open(inputfile_2,O_RDONLY))==-1){
       printf("cannot open file.");
       exit(1);
@@ -508,6 +520,20 @@ void init(){
        }
     }
    }
+   //////////////
+   //Follow
+   ///////////
+   struct set TMP_SET;
+   TMP_SET.element[0]="$";
+   TMP_SET.set_max = 1;
+   addSet(&NonT[0].Follow ,TMP_SET);//Start symbol follow $
+
+   for(int c=0;c<80;c++){
+      for(int n=0;n<g_size;n++){
+         Follow(NonT[n].name);
+      }
+   }
+
   //check data structure
    int loop_count = 0;
    for(;loop_count<g_size;loop_count++){
@@ -535,7 +561,33 @@ void init(){
       }
       printf("\n");
    }
+   //Nullable First Follow output_set
+  FILE* output_set=fopen(outputfile_2,"w");
+   fprintf(output_set,"Nullable\n");
+   for(int n=0;n<g_size;n++){
+      fprintf(output_set,"%s    :",NonT[n].name);
+      if(NonT[n].isNull)fprintf(output_set,"True\n");
+      else fprintf(output_set,"False\n");
+   }
+   fprintf(output_set,"\n");
+   fprintf(output_set,"First\n\n");
+   for(int n=0;n<g_size;n++){
+      fprintf(output_set,"%s    :",NonT[n].name);
+      for(int set_count=0;set_count<NonT[n].First.set_max;set_count++){
+         fprintf(output_set,"%s ",NonT[n].First.element[set_count]);
+      }
+      fprintf(output_set,"\n");
 
+   }
+   fprintf(output_set,"\n");
+   fprintf(output_set,"Follow\n\n");
+   for(int n=0;n<g_size;n++){
+      fprintf(output_set,"%s    :",NonT[n].name);
+      for(int set_count=0;set_count<NonT[n].Follow.set_max;set_count++){
+         fprintf(output_set,"%s ",NonT[n].Follow.element[set_count]);
+      }
+      fprintf(output_set,"\n");
+   }
 close(fd1);
 close(fd3);
 }
