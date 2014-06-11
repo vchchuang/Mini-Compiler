@@ -11,6 +11,7 @@
 #define st_size 50
 char inputfile_1[20]="main.c" ,outputfile_1[20]="token.txt";
 char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
+char outputfile_3[20]="symbol.txt";
 //For lexer
 char chstr[chstr_size] ,buf[buf_size];
 //For IO File
@@ -621,6 +622,7 @@ close(fd3);
 int main(){
 
    FILE* out;
+   FILE* st_output;
    //build parsing table
    init();
    //init stack
@@ -636,7 +638,7 @@ int main(){
    //open outputfil
    //fd6=open(outputfile_1,O_CREAT|O_WRONLY,0644);
    out=fopen(outputfile_1,"w");
-   
+   st_output=fopen(outputfile_3,"w");
 
    //parsing
    int finish=0;
@@ -691,6 +693,8 @@ int main(){
    printf("SymbolTable\n");
    for(int sto=0;sto<st_count;sto++){
       printf("%s %d %s %d\n",st[sto].symbol,st[sto].token,st[sto].type,st[sto].scope);
+      fprintf(st_output
+        ,"%s %d %s %d\n",st[sto].symbol,st[sto].token,st[sto].type,st[sto].scope);
    }
  
    //token_list output
@@ -719,4 +723,5 @@ int main(){
    close(fd4);
    close(fd6);
    fclose(out);
+   fclose(st_output);
 }
