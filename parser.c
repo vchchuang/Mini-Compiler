@@ -5,6 +5,7 @@
 #define chstr_size 2
 #define buf_size 10
 #define g_size 28
+#define t_size 35
 #define set_size 40
 #define loc_size 20
 #define nol 50
@@ -12,6 +13,7 @@
 char inputfile_1[20]="main.c" ,outputfile_1[20]="token.txt";
 char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
 char outputfile_3[20]="symbol.txt";
+char outputfile_4[20]="LLtable.txt";
 //For lexer
 char chstr[chstr_size] ,buf[buf_size];
 //For IO File
@@ -33,6 +35,13 @@ char* tok_sym[9]={"Keyword","Operator","SpecialSymbol","Identifier","Num","Char"
 int state=0 ,lookahead=-1;
 int line=0 ,it=0 ,sc=0 ,scope=0;
 int st_count =0;
+
+struct production{
+   int tok_element[10];
+   char p_element[10][20];
+   int e_max;
+}LLtable[g_size][t_size];//the value of the array is for production
+
 struct symbol_table{
    char symbol[10]; 
    char* token;
@@ -122,6 +131,23 @@ void checkpoint(int a ,char* s){
    printf("lookahead is %s in state %d \n",s,a);
 }
 
+int inFirst(int n,int b,int t){//in body First
+   for(int f=0;f<NonT[n].body[b].First.set_max;f++){
+      if(strcmp(tok_dict[t],NonT[n].body[b].First.element[f])==0){
+         return 1;
+      }
+   }
+   return 0;
+}
+int inFollow(int n,int t){
+
+   for(int f=0;f<NonT[n].Follow.set_max;f++){
+      if(strcmp(tok_dict[t],NonT[n].Follow.element[f])==0){
+         return 1;
+      }
+   }
+   return 0;
+}
 int checkSymbolTable(char* str){
 
    for(int i=0;i<st_count;i++){
@@ -180,6 +206,7 @@ int Nullable(char* str){
             NonT[index].body[or].isNull=0;
             break;//check next body
          }else if(and==NonT[index].body[or].e_max){
+            NonT[index].body[or].isNull=1;
             return 1;//check finished
          }
       }
@@ -562,6 +589,44 @@ void init(){
       }
    }
 
+   //////////////////
+   //Build LLtable
+   //////////////
+   for(int t=0;t<t_size;t++){
+      for(int n=1;n<g_size;n++){
+         for(int b=0;b<NonT[n].p_max;b++){
+            
+            if(inFirst(n,b,t)
+              ||(NonT[n].body[b].isNull&&inFollow(n,t))){
+               
+               for(int e=0;e<NonT[n].body[b].e_max;e++){//build production
+                  /////////////////////
+                  //store symbol value
+                  ////////////////////
+                  if(isT(NonT[n].body[b].element[e])==30){
+                     LLtable[n][t].tok_element[e]=
+                       FindTokV(NonT[n].body[b].element[e]);//get token value as symbol for stack
+                  }else {
+                    
+                     LLtable[n][t].tok_element[e]= n;//see index of NonT as symbol for stack
+                  }
+                  ////////////////
+                  //store string 
+                  //////////////
+                  strcpy(LLtable[n][t].p_element[e],NonT[n].body[b].element[e]);
+               }
+
+               LLtable[n][t].e_max = NonT[n].body[b].e_max;
+               break;
+            }else if(b==NonT[n].p_max-1){
+               LLtable[n][t].tok_element[0]=99;
+               //LLtable[n][t].p_element[0]="";
+               LLtable[n][t].e_max = 0;
+            }
+         }
+      }
+   }
+
   //check data structure
    int loop_count = 0;
    for(;loop_count<g_size;loop_count++){
@@ -616,9 +681,27 @@ void init(){
       }
       fprintf(output_set,"\n");
    }
+   //LLtable output_llt
+   FILE* output_llt=fopen(outputfile_4,"w");
+   fprintf(output_llt,"%s\n",NonT[0].name);
+
+   for(int n=1;n<g_size;n++){
+      for(int t=0;t<t_size;t++){
+         if(LLtable[n][t].e_max>0){
+            fprintf(output_llt,"%s    %s    ",NonT[n].name,tok_dict[t]);
+            for(int e=0;e<LLtable[n][t].e_max;e++){
+               fprintf(output_llt,"%s ",LLtable[n][t].p_element[e]);
+            }
+            fprintf(output_llt,"\n");
+         }else break;
+      }
+   }
+         
 
 close(fd1);
 close(fd3);
+fclose(output_set);
+fclose(output_llt);
 }
 int main(){
 
