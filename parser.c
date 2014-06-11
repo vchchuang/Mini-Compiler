@@ -35,7 +35,7 @@ int line=0 ,it=0 ,sc=0 ,scope=0;
 int st_count =0;
 struct symbol_table{
    char symbol[10]; 
-   int token;
+   char* token;
    char type[10];
    int scope;
    //int value;
@@ -333,7 +333,8 @@ void lexer(char* ch,int c){
                ///////////////
              if(checkSymbolTable(buf)){
                 strcpy(st[st_count].symbol,buf);
-                st[st_count].token=tok_list[line].item[it].token;
+                st[st_count].token="id";
+                  //tok_list[line].item[it].token;
                 strcpy(st[st_count].type,tok_list[line].item[it-2].name);
                 st[st_count].scope=scope;
                 st_count = st_count+1;
@@ -694,7 +695,7 @@ int main(){
    for(int sto=0;sto<st_count;sto++){
       printf("%s %d %s %d\n",st[sto].symbol,st[sto].token,st[sto].type,st[sto].scope);
       fprintf(st_output
-        ,"%s %d %s %d\n",st[sto].symbol,st[sto].token,st[sto].type,st[sto].scope);
+        ,"%s %s %s %d\n",st[sto].symbol,st[sto].token,st[sto].type,st[sto].scope);
    }
  
    //token_list output
