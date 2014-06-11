@@ -30,12 +30,12 @@ char* tok_sym[9]={"Keyword","Operator","SpecialSymbol","Identifier","Num","Char"
 int state=0 ,lookahead=-1;
 int line=0 ,it=0 ,sc=0 ,scope=0;
 struct symbol_table{
-   char symbol[10];
+   char symbol[10]; 
    int token;
-   int init;//init value?
-   char str[10];
+   char type[10];
+   int scope;
    //int value;
-}st[5][20];
+}st[20];
 struct lex_data{//for lexer
    int token;
    int scope;
