@@ -11,7 +11,9 @@
 #define st_size 50
 char inputfile_1[20]="main.c" ,outputfile_1[20]="token.txt";
 char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
+//For lexer
 char chstr[chstr_size] ,buf[buf_size];
+//For IO File
 int fd1 ,fd2 ,fd3;//IO grammar information
 int fd4 ,fd5 ,fd6;//IO source code
 char *tok_dict[]={
@@ -29,6 +31,7 @@ char* tok_sym[9]={"Keyword","Operator","SpecialSymbol","Identifier","Num","Char"
 
 int state=0 ,lookahead=-1;
 int line=0 ,it=0 ,sc=0 ,scope=0;
+int st_count =0;
 struct symbol_table{
    char symbol[10]; 
    int token;
@@ -116,6 +119,14 @@ int FindNonTV(char* str){
 //for input
 void checkpoint(int a ,char* s){
    printf("lookahead is %s in state %d \n",s,a);
+}
+
+int checkSymbolTable(char* str){
+
+   for(int i=0;i<st_count;i++){
+      if(strcmp(st[i].symbol,str)==0)return 0;
+   }
+   return 1;//not found in symbol table
 }
 int isT(char* str){
    for(int i=0;i<g_size;i++){
@@ -228,6 +239,8 @@ void Follow(char* lhs){
       }
    }
 }
+
+
 void lexer(char* ch,int c){
    
    //printf("%s",buf);
@@ -259,7 +272,7 @@ void lexer(char* ch,int c){
           if(strcmp(ch," ")==0){
              state=0;
 
-             if(strcmp(buf,"{")==0){
+             if(strcmp(buf,"(")==0 ){            
                 sc = sc+1;
                 scope = sc;
              }else if(strcmp(buf,"}")==0){
@@ -275,7 +288,7 @@ void lexer(char* ch,int c){
           }else if(strcmp(ch,"\n")){
              state=0;
             
-             if(strcmp(buf,"{")==0){
+             if(strcmp(buf,"(")==0 ){
                 sc = sc+1;
                 scope = sc;
              }else if(strcmp(buf,"}")==0){
@@ -303,14 +316,27 @@ void lexer(char* ch,int c){
             state=0;
  //           printf("%s",buf);
             lookahead=FindTokV(buf);
-            if(lookahead>=46||lookahead<40){
+            if(lookahead>=46||lookahead<40){//identifier
+               //////////////
+               //token_list//
+               //////////////
                tok_list[line].item[it].token
-                 =lookahead=FindTokV("id"); //identifier
+                 =lookahead=FindTokV("id"); 
                strcpy(tok_list[line].item[it].name ,buf);
                tok_list[line].item[it].scope=scope;
                tok_list[line].line=line;
                tok_list[line].e_count=it;
                it = it+1;
+               ////////////////
+               //symbol table//
+               ///////////////
+             if(checkSymbolTable(buf)){
+                strcpy(st[st_count].symbol,buf);
+                st[st_count].token=tok_list[line].item[it].token;
+                strcpy(st[st_count].type,tok_list[line].item[it-2].name);
+                st[st_count].scope=scope;
+                st_count = st_count+1;
+             }
 
             }else{
             
@@ -588,6 +614,7 @@ void init(){
       }
       fprintf(output_set,"\n");
    }
+
 close(fd1);
 close(fd3);
 }
@@ -657,8 +684,16 @@ int main(){
 
       if(fd5<=0)finish=1;//for testing lexer
    }
-    
-//token_list output
+
+   //////////////////////
+   //symbol table output
+   //////
+   printf("SymbolTable\n");
+   for(int sto=0;sto<st_count;sto++){
+      printf("%s %d %s %d\n",st[sto].symbol,st[sto].token,st[sto].type,st[sto].scope);
+   }
+ 
+   //token_list output
    int opt=0,tk=0;
    for(int l=0;l<line;l++){
       fprintf(out,"line %d:\n",l+1);
