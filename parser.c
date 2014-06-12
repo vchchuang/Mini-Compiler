@@ -102,15 +102,13 @@ void rm(int hm){
 //search value
 int FindTokV(char* str){
    int tokv=0 ,c=0;
-   while(strcmp(str,tok_dict[c])!=0&&strcmp(tok_dict[c],"$")!=0){
-      c = c+1;
+   for(;c<35;c++){
+      if(strcmp(str,tok_dict[c])==0){   
+         tokv = c+40;
+         return tokv;//tokv-40+1 => serial num of terminal
+      }
    }
-   if(c>50){
-      return -1;
-   }else{
-      tokv = c+40;
-      return tokv;//tokv-40+1 => serial num of terminal
-   }
+   return -1;
 }
 
 int FindNonTV(char* str){
@@ -249,7 +247,7 @@ void Follow(char* lhs){
                   index2=isT(NonT[i].body[pd].element[e+1]);
 
                   if(index2==30){//S -> T b
-                    printf("NonT is %s and  is in %s 's body-%d ,%dth position ,e+1 is %s\n" ,NonT[index].name,NonT[i].name,pd,e,NonT[i].body[pd].element[e+1]);
+                   // printf("NonT is %s and  is in %s 's body-%d ,%dth position ,e+1 is %s\n" ,NonT[index].name,NonT[i].name,pd,e,NonT[i].body[pd].element[e+1]);
                      SET.element[0]=NonT[i].body[pd].element[e+1];
                      SET.set_max = 1;
                      addSet(&NonT[index].Follow ,SET);
@@ -344,7 +342,7 @@ void lexer(char* ch,int c){
             state=0;
  //           printf("%s",buf);
             lookahead=FindTokV(buf);
-            if(lookahead>=46||lookahead<40){//identifier
+            if(lookahead==-1){//identifier
                //////////////
                //token_list//
                //////////////
@@ -542,8 +540,10 @@ void init(){
    /////////////////
    //  Nullable
    //////////////
-   for(int n=0;n<g_size;n++){
-      NonT[n].isNull = Nullable(NonT[n].name);
+   for(int c=0;c<10;c++){
+      for(int n=0;n<g_size;n++){
+         NonT[n].isNull = Nullable(NonT[n].name);
+      }
    }
    ////////////////
    // First
@@ -562,7 +562,7 @@ void init(){
                }
                else{
                   addSet(&NonT[n].body[b].First,SET);
-                  printf("%d ",n);
+                  printf("Check LHS First0 %s \n",NonT[n].body[b].First.element[0]);
                   break;
                }
             }  
@@ -595,33 +595,34 @@ void init(){
    for(int t=0;t<t_size;t++){
       for(int n=1;n<g_size;n++){
          for(int b=0;b<NonT[n].p_max;b++){
-            
+          // printf("Now T is %s\n",tok_dict[t]);
+          // printf("N is %s\n",NonT[n].name);
             if(inFirst(n,b,t)
-              ||(NonT[n].body[b].isNull&&inFollow(n,t))){
-               
-               for(int e=0;e<NonT[n].body[b].e_max;e++){//build production
+                ||(NonT[n].body[b].isNull&&inFollow(n,t))){
+
+               for(int e=0;e<=NonT[n].body[b].e_max;e++){//build production
                   /////////////////////
                   //store symbol value
                   ////////////////////
                   if(isT(NonT[n].body[b].element[e])==30){
                      LLtable[n][t].tok_element[e]=
                        FindTokV(NonT[n].body[b].element[e]);//get token value as symbol for stack
-                  }else {
-                    
-                     LLtable[n][t].tok_element[e]= n;//see index of NonT as symbol for stack
+                  }else { 
+                     LLtable[n][t].tok_element[e]= 
+                       FindNonTV(NonT[n].body[b].element[e]);//see index of NonT as symbol for stack
                   }
                   ////////////////
                   //store string 
                   //////////////
-                  strcpy(LLtable[n][t].p_element[e],NonT[n].body[b].element[e]);
+                  strcpy(LLtable[n][t].p_element[e] ,NonT[n].body[b].element[e]);
                }
 
-               LLtable[n][t].e_max = NonT[n].body[b].e_max;
+               LLtable[n][t].e_max = NonT[n].body[b].e_max+1;
                break;
             }else if(b==NonT[n].p_max-1){
                LLtable[n][t].tok_element[0]=99;
                //LLtable[n][t].p_element[0]="";
-               LLtable[n][t].e_max = 0;
+               LLtable[n][t].e_max = -1;
             }
          }
       }
@@ -645,7 +646,7 @@ void init(){
       }
       printf("\n");
 
-      for(int p=0;p<=NonT[loop_count].p_max;p++){
+      for(int p=0;p<NonT[loop_count].p_max;p++){
          printf("\t");
          for(int e=0;e<=NonT[loop_count].body[p].e_max;e++){
             printf("%s  ",NonT[loop_count].body[p].element[e]);
@@ -687,13 +688,13 @@ void init(){
 
    for(int n=1;n<g_size;n++){
       for(int t=0;t<t_size;t++){
-         if(LLtable[n][t].e_max>0){
+         if(LLtable[n][t].e_max > 0){
             fprintf(output_llt,"%s    %s    ",NonT[n].name,tok_dict[t]);
             for(int e=0;e<LLtable[n][t].e_max;e++){
                fprintf(output_llt,"%s ",LLtable[n][t].p_element[e]);
             }
             fprintf(output_llt,"\n");
-         }else break;
+         }
       }
    }
          
