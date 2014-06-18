@@ -30,7 +30,7 @@ char *tok_dict[]={
      ,"epsilon"//empty string
      ,"$"
 };
-char* tok_sym[9]={"Keyword","Operator","SpecialSymbol","Identifier","Num","Char","Comment","Epsilon","$"};
+char* tok_sym[9]={"Keyword","Operator","Special","Identifier","Num","Char","Comment","Epsilon","$"};
 
 int state=0 ,lookahead=-1;
 int line=0 ,it=0 ,sc=0 ,scope=0;
