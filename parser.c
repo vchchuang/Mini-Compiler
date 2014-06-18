@@ -34,7 +34,7 @@ char* tok_sym[9]={"Keyword","Operator","SpecialSymbol","Identifier","Num","Char"
 
 int state=0 ,lookahead=-1;
 int line=0 ,it=0 ,sc=0 ,scope=0;
-int st_count =0;
+int st_count=0 ,l_skip=0;
 
 struct production{
    int tok_element[10];
@@ -266,18 +266,31 @@ void Follow(char* lhs){
    }
 }
 
+int bc = 0 ,isNL=0;
+char dbug[2];//dbug[0]='\0';
 
 void lexer(char* ch,int c){
    
    //printf("%s",buf);
-  // printf("%d",ch);
+   printf("Now ch is %s and state is %d\n",ch,state);
+    //remove bug of new line
+    /*  if(isNL==1&&strcmp(ch,"\n")==0){
+         if(strcmp(dbug,"\n")!=0)
+         {
+            dbug[0]='\n';
+            dbug[1]='\0';
+         }
+      }else dbug[0]='\0';
+   */
    switch(state){
      case 0:
-         if(strcmp(ch,"+")==0||strcmp(ch,"-")==0||strcmp(ch,"*")==0||strcmp(ch,"/")==0||strcmp(ch,"=")==0||strcmp(ch,";")==0||strcmp(ch,",")==0||strcmp(ch,"(")==0||strcmp(ch,")")==0||strcmp(ch,"{")==0||strcmp(ch,"}")==0){
+         if(strcmp(ch,"+")==0||strcmp(ch,"-")==0||strcmp(ch,"*")==0||strcmp(ch,"=")==0||strcmp(ch,";")==0||strcmp(ch,",")==0||strcmp(ch,"(")==0||strcmp(ch,")")==0||strcmp(ch,"{")==0||strcmp(ch,"}")==0){
             buf[c]=ch[0];
             buf[c+1]='\0';
-//           printf("%s",buf);
+//          printf("%s",buf);
             state = 1;// operator and special symbol
+         }else if(strcmp(ch,"/")==0){
+            state = 4; 
          }else if(isalpha(ch[0])){
             buf[c]=ch[0];
             buf[c+1]='\0';
@@ -288,16 +301,30 @@ void lexer(char* ch,int c){
             state = 3;//digit
           }else if(strcmp(ch," ")==0){
              state=-1;
-          }else if(strcmp(ch,"\n")==0){
-            state=-1;
-            //line = line+1;
+          }else if(isNL==1&&strcmp(ch,"\n")==0){
+            isNL = 0;
             it = 0;
-          }
+          }else if(strcmp(ch,"\n")==0){
+             state=-1;
+             //tok_list[line].item[it].token=lookahead=FindTokV(buf);
+             buf[c]=ch[0];
+             buf[c+1]='\0';
+            strcpy(tok_list[line].item[0].name ,buf);
+            printf("@@This is state %d :%s\n",state,buf);
+            tok_list[line].item[0].scope=scope;
+            tok_list[line].line=line;
+            tok_list[line].e_count=it;
+  
+            line = line + 1;
+            it = 0;
+         }
+      
          break;
       case 1:// + - * / = // == , ; ( ) { }
-          if(strcmp(ch," ")==0){
-             state=0;
-
+         //printf("buf is %s / ch is %d",buf,ch);
+         if(strcmp(buf,";")==0&&strcmp(ch,"\n")||strcmp(buf,"{")==0&&strcmp(ch,"\n")||strcmp(buf,"}")==0&&strcmp(ch,"\n")){
+             state=-1;
+             isNL=1;
              if(strcmp(buf,"(")==0 ){            
                 sc = sc+1;
                 scope = sc;
@@ -306,15 +333,16 @@ void lexer(char* ch,int c){
              }
              tok_list[line].item[it].token=lookahead=FindTokV(buf);
              strcpy(tok_list[line].item[it].name ,buf);
-             printf("This is state %d :%s\n",state,buf);
+       //      printf("This is state %d :%s\n",state,buf);
              tok_list[line].item[it].scope=scope;
              tok_list[line].line=line;
              tok_list[line].e_count=it;
-             it = it+1;
-          }else if(strcmp(ch,"\n")){
+             line = line+1;
+             it = 0;
+          }else if(strcmp(ch," ")==0){
+         //    printf("This is state %d :%s\n",state,buf);
              state=0;
-            
-             if(strcmp(buf,"(")==0 ){
+             if(strcmp(buf,"(")==0){
                 sc = sc+1;
                 scope = sc;
              }else if(strcmp(buf,"}")==0){
@@ -325,12 +353,11 @@ void lexer(char* ch,int c){
              tok_list[line].item[it].scope=scope;
              tok_list[line].line=line;
              tok_list[line].e_count=it;
-             line = line+1;
-             it = 0;
+             it = it+1;
           }else if(strcmp(buf[c-1],"/")==0&&strcmp(ch,"/")==0){
            buf[c]=ch[0];
            buf[c+1]='\0';
-           state = 1;
+           state = 4;
          }else if(strcmp(buf[c-1],"=")&&strcmp(ch,"=")==0){
            buf[c]=ch[0];
            buf[c+1]='\0';
@@ -396,14 +423,26 @@ void lexer(char* ch,int c){
             buf[c]=ch[0];
             buf[c+1]='\0';
             state = 3;
+         }else state = 100;
+         break;
+      case 4:
+         if(strcmp(ch,"/")==0)state=4;
+         else if(strcmp(ch,"\n")==0)state=-1;
+         else if(strcmp(ch," ")==0){
+             tok_list[line].item[it].token=lookahead=FindTokV(buf);
+             strcpy(tok_list[line].item[it].name ,buf);
+             tok_list[line].item[it].scope=scope;
+             tok_list[line].line=line;
+             tok_list[line].e_count=it;
+             it = it+1;
          }
          break;
       case 99:
       //produce a lexeme
-         
          break;
       case 100:
          //error
+         printf("ERROR");
          break;
       default :
        break;
@@ -739,11 +778,21 @@ int main(){
       //and return lexem for parser
       //LL(1) parser
       chstr[1]='\0';
-    //   printf("%s",chstr);
+      // printf("%s",chstr);
       if(state==-1)state=0;
+      //remove bug of new line
+      if(strcmp(chstr,"\n")==0){
+         if(strcmp(dbug,"\n")!=0)
+         {
+            dbug[0]='\n';
+            dbug[1]='\0';
+         }
+      }else dbug[0]='\0';
    //lexer
       lexer(chstr,e_count);
-      
+      if(strcmp(chstr,"\n")==0){
+         printf("new line\n");
+      }
       if(state==-1){
          e_count=0;
          buf[0]='\0';
@@ -772,9 +821,9 @@ int main(){
       if(fd5<=0)finish=1;//for testing lexer
    }
 
-   //////////////////////
+   ///////////////////////
    //symbol table output
-   //////
+   //////////////////////
    printf("SymbolTable\n");
    for(int sto=0;sto<st_count;sto++){
       printf("%s %d %s %d\n",st[sto].symbol,st[sto].token,st[sto].type,st[sto].scope);
@@ -799,10 +848,13 @@ int main(){
          else if(tk==73)opt=7;
          else if(tk==74)opt=8;
     //     printf("tk %d opt %d",tk,opt);
+         if(strcmp(tok_list[l].item[0].name,"\n")==0)break;
          fprintf(out,"    <%s>: %s\n",tok_sym[opt],tok_list[l].item[e].name);
          printf("    <%s>: %s\n",tok_sym[opt],tok_list[l].item[e].name);
 
       }
+
+   //   printf("bc is %d\n",bc);
    }
    
    close(fd4);
