@@ -98,6 +98,18 @@ void rm(int hm){
       stp = stp-hm;
    }
 }
+void blanker(int len){
+   int lcount = 0;
+   for(;lcount<len;lcount++){
+      printf(" ");
+   }
+}
+void fblanker(FILE* f ,int len){
+   int lcount = 0;
+   for(;lcount<len;lcount++){
+      fprintf(f," ");
+   }
+}
 
 //search value
 int FindTokV(char* str){
@@ -698,14 +710,20 @@ void init(){
   FILE* output_set=fopen(outputfile_2,"w");
    fprintf(output_set,"Nullable\n");
    for(int n=0;n<g_size;n++){
-      fprintf(output_set,"%s    :",NonT[n].name);
+      fprintf(output_set,"%s",NonT[n].name);
+      
+      fblanker(output_set ,20-strlen(NonT[n].name));
+
       if(NonT[n].isNull)fprintf(output_set,"True\n");
       else fprintf(output_set,"False\n");
    }
    fprintf(output_set,"\n");
    fprintf(output_set,"First\n\n");
    for(int n=0;n<g_size;n++){
-      fprintf(output_set,"%s    :",NonT[n].name);
+      fprintf(output_set,"%s",NonT[n].name);
+      
+      fblanker(output_set,20-strlen(NonT[n].name));
+      
       for(int set_count=0;set_count<NonT[n].First.set_max;set_count++){
          fprintf(output_set,"%s ",NonT[n].First.element[set_count]);
       }
@@ -715,7 +733,10 @@ void init(){
    fprintf(output_set,"\n");
    fprintf(output_set,"Follow\n\n");
    for(int n=0;n<g_size;n++){
-      fprintf(output_set,"%s    :",NonT[n].name);
+      fprintf(output_set,"%s",NonT[n].name);
+
+      fblanker(output_set,20-strlen(NonT[n].name));
+      
       for(int set_count=0;set_count<NonT[n].Follow.set_max;set_count++){
          fprintf(output_set,"%s ",NonT[n].Follow.element[set_count]);
       }
@@ -728,7 +749,11 @@ void init(){
    for(int n=1;n<g_size;n++){
       for(int t=0;t<t_size;t++){
          if(LLtable[n][t].e_max > 0){
-            fprintf(output_llt,"%s    %s    ",NonT[n].name,tok_dict[t]);
+            fprintf(output_llt,"%s",NonT[n].name);
+            fblanker(output_llt,20-strlen(NonT[n].name));
+            fprintf(output_llt,"%s",tok_dict[t]);
+            fblanker(output_llt,10-strlen(tok_dict[t]));
+
             for(int e=0;e<LLtable[n][t].e_max;e++){
                fprintf(output_llt,"%s ",LLtable[n][t].p_element[e]);
             }
@@ -826,9 +851,14 @@ int main(){
    //////////////////////
    printf("SymbolTable\n");
    for(int sto=0;sto<st_count;sto++){
-      printf("%s %d %s %d\n",st[sto].symbol,st[sto].token,st[sto].type,st[sto].scope);
-      fprintf(st_output
-        ,"%s %s %s %d\n",st[sto].symbol,st[sto].token,st[sto].type,st[sto].scope);
+      
+      printf("%s ",st[sto].symbol);
+      blanker(10-strlen(st[sto].symbol));
+      printf("%s %s %d\n",st[sto].token,st[sto].type,st[sto].scope);
+      
+      fprintf(st_output,"%s ",st[sto].symbol);
+      fblanker(st_output,10-strlen(st[sto].symbol));
+      fprintf(st_output,"%s %s %d\n",st[sto].token,st[sto].type,st[sto].scope);
    }
  
    //token_list output
@@ -849,9 +879,13 @@ int main(){
          else if(tk==74)opt=8;
     //     printf("tk %d opt %d",tk,opt);
          if(strcmp(tok_list[l].item[0].name,"\n")==0)break;
-         fprintf(out,"    <%s>: %s\n",tok_sym[opt],tok_list[l].item[e].name);
-         printf("    <%s>: %s\n",tok_sym[opt],tok_list[l].item[e].name);
+         fprintf(out,"    <%s>: ",tok_sym[opt]);
+         fblanker(out,10-strlen(tok_sym[opt]));
+         fprintf(out,"%s\n",tok_list[l].item[e].name);
 
+         printf("    <%s>: ",tok_sym[opt]);
+         blanker(10-strlen(tok_sym[opt]));
+         printf("%s\n",tok_list[l].item[e].name);
       }
 
    //   printf("bc is %d\n",bc);
