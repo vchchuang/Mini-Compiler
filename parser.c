@@ -14,6 +14,7 @@ char inputfile_1[20]="main.c" ,outputfile_1[20]="token.txt";
 char inputfile_2[20]="grammar.txt" ,outputfile_2[20]="set.txt";
 char outputfile_3[20]="symbol.txt";
 char outputfile_4[20]="LLtable.txt";
+char outputfile_5[20]="tree.txt";
 //For lexer
 char chstr[chstr_size] ,buf[buf_size];
 //For IO File
@@ -30,7 +31,7 @@ char *tok_dict[]={
      ,"epsilon"//empty string
      ,"$"
 };
-char* tok_sym[9]={"Keyword","Operator","Special","Identifier","Num","Char","Comment","Epsilon","$"};
+char* tok_sym[10]={"Keyword","Operator","Special","Identifier","Num","Char","Comment","Epsilon","error","$"};
 
 int state=0 ,lookahead=-1;
 int line=0 ,it=0 ,sc=0 ,scope=0;
@@ -417,6 +418,10 @@ void lexer(char* ch,int c){
             buf[c]=ch[0];
             buf[c+1]='\0';
             state = 2;
+         }else{
+            state = 100;
+            buf[c]=ch[0];
+            buf[c+1]='\0';
          }
          break;
       case 3:
@@ -435,7 +440,11 @@ void lexer(char* ch,int c){
             buf[c]=ch[0];
             buf[c+1]='\0';
             state = 3;
-         }else state = 100;
+         }else if(isalpha(ch[0])){
+            state = 100;
+            buf[c]=ch[0];
+            buf[c+1]='\0';
+         }
          break;
       case 4:
          if(strcmp(ch,"/")==0)state=4;
@@ -455,6 +464,19 @@ void lexer(char* ch,int c){
       case 100:
          //error
          printf("ERROR");
+         if(strcmp(ch," ")!=0){
+            buf[c]=ch[0];
+            buf[c+1]='\0';
+            state = 100;
+         }else{
+            state = -1;
+               tok_list[line].item[it].token=404; //error
+               strcpy(tok_list[line].item[it].name ,buf);
+               tok_list[line].item[it].scope=scope;
+               tok_list[line].line=line;
+               tok_list[line].e_count=it;
+               it = 0;
+      }
          break;
       default :
        break;
@@ -793,6 +815,8 @@ int main(){
    int finish=0;
    int e_count=0;
    buf[0]='\0';
+   push(FindNonTV("$"));//the init of stack
+   push(0);
    while(!finish){
       state=-1;
     //  printf("lookahead is ");
@@ -835,7 +859,10 @@ int main(){
           buf[0]='\0';
           break;
        }
-
+      /////////
+      //parsing
+      //////// 
+      
    }
    e_count = 0;
 
@@ -877,6 +904,7 @@ int main(){
          else if(tk==72)opt=6;
          else if(tk==73)opt=7;
          else if(tk==74)opt=8;
+         else if(tk==404)opt=9;
     //     printf("tk %d opt %d",tk,opt);
          if(strcmp(tok_list[l].item[0].name,"\n")==0)break;
          fprintf(out,"    <%s>: ",tok_sym[opt]);
