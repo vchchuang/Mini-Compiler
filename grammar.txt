@@ -16,7 +16,7 @@ FDL
     FunDeclList
     epsilon
 FunDecl
-    Type id ( ParamDecList ) Block
+    Type id ( ParamDeclList ) Block
 ParamDeclList
     ParamDeclListTail
     epsilon
