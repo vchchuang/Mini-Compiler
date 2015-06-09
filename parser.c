@@ -819,7 +819,6 @@ int main(){
    push(0);
    while(!finish){
       state=-1;
-    //  printf("lookahead is ");
       //buf[1]='\0';
       //give a token if success 
    while((fd5=read(fd4 ,chstr,chstr_size-1))>0){//fd6 bytes
@@ -827,7 +826,6 @@ int main(){
       //and return lexem for parser
       //LL(1) parser
       chstr[1]='\0';
-      // printf("%s",chstr);
       if(state==-1)state=0;
       //remove bug of new line
       if(strcmp(chstr,"\n")==0){
@@ -905,7 +903,6 @@ int main(){
          else if(tk==73)opt=7;
          else if(tk==74)opt=8;
          else if(tk==404)opt=9;
-    //     printf("tk %d opt %d",tk,opt);
          if(strcmp(tok_list[l].item[0].name,"\n")==0)break;
          fprintf(out,"    <%s>: ",tok_sym[opt]);
          fblanker(out,10-strlen(tok_sym[opt]));
@@ -916,7 +913,6 @@ int main(){
          printf("%s\n",tok_list[l].item[e].name);
       }
 
-   //   printf("bc is %d\n",bc);
    }
    
    close(fd4);
